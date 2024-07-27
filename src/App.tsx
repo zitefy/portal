@@ -7,6 +7,7 @@ const Dashboard = lazy(() => import('~/pages/dashboard/Dashboard'))
 const Profile = lazy(() => import('~/pages/profile/Profile'))
 const Explorer = lazy(() => import('~/pages/templates/Explorer'))
 const Editor = lazy(() => import('~/pages/templates/Editor'))
+const ZiteChef = lazy(() => import('~/pages/anthropic/ZiteChef'))
 
 const App: Component = () => {
   return (
@@ -18,6 +19,8 @@ const App: Component = () => {
         <Route path="/profile" component={Profile} />
         <Route path="/explore" component={Explorer} />
         <Route path="/editor" component={Editor} />
+        <Route path="/api" component={ZiteChef} />
+
       </Router>
     </div>
   )
