@@ -5,6 +5,7 @@ const Login = lazy(() => import('~/pages/auth/Login'))
 const SignUp = lazy(() => import('~/pages/auth/SignUp'))
 const Dashboard = lazy(() => import('~/pages/dashboard/Dashboard'))
 const Profile = lazy(() => import('~/pages/profile/Profile'))
+const Explorer = lazy(() => import('~/pages/templates/Explorer'))
 
 const App: Component = () => {
   return (
@@ -14,6 +15,7 @@ const App: Component = () => {
         <Route path="/login" component={Login} />
         <Route path="/signup" component={SignUp} />
         <Route path="/profile" component={Profile} />
+        <Route path="/explore" component={Explorer} />
       </Router>
     </div>
   )
