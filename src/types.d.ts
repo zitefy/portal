@@ -1,3 +1,9 @@
+export type Link = {
+  selector: string,
+  value?: string,
+  link?: string
+}
+
 type ObjectId = {
   $oid: string
 }
