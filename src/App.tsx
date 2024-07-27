@@ -8,6 +8,8 @@ const Profile = lazy(() => import('~/pages/profile/Profile'))
 const Explorer = lazy(() => import('~/pages/templates/Explorer'))
 const Editor = lazy(() => import('~/pages/templates/Editor'))
 const ZiteChef = lazy(() => import('~/pages/anthropic/ZiteChef'))
+const UserTaken = lazy(() => import('~/pages/404/Taken'))
+const NotFound = lazy(() => import('~/pages/404/404'))
 
 const App: Component = () => {
   return (
@@ -20,7 +22,8 @@ const App: Component = () => {
         <Route path="/explore" component={Explorer} />
         <Route path="/editor" component={Editor} />
         <Route path="/api" component={ZiteChef} />
-
+        <Route path="/404" component={NotFound} />
+        <Route path="/:username" component={UserTaken} />
       </Router>
     </div>
   )
