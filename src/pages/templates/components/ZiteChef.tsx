@@ -1,9 +1,12 @@
-import { Component, createSignal, For, Setter, Show } from 'solid-js'
+import { Component, createSignal, For, onMount, Setter, Show } from 'solid-js'
 import { A } from '@solidjs/router'
 import { SiTopcoder } from 'solid-icons/si'
 import { AiOutlineClose } from 'solid-icons/ai'
 import { BiSolidSend } from 'solid-icons/bi'
 import Modal from '~/components/Modal'
+import { getChatSession, setChatSession } from '~/api/cache'
+import { askClaude } from '~/api/anthropic'
+import { Code, Message } from '~/types'
 
 type Props = {
   onRefresh: () => void
@@ -16,7 +19,7 @@ type Props = {
 }
 const ZiteChef: Component<Props> = (props) => {
   const [open, setOpen] = createSignal(false)
-  const [chat, setChat] = createSignal([])
+  const [chat, setChat] = createSignal<Message[]>([])
   const [message, setMessage] = createSignal<string>('')
   const [thinking, setThinking] = createSignal<boolean>(false)
 
@@ -30,6 +33,36 @@ const ZiteChef: Component<Props> = (props) => {
         <p class="w-full break-words">{chat.message}</p>
       </div>
     </div>
+  }
+
+  onMount(() => setChat(getChatSession()))
+
+  const handleCodeChange = (code: Code) => {
+    props.setHtml(code.html)
+    props.setCSS(code.css || css())
+    props.setJS(code.js || js())
+  }
+
+  const onMessage = async() => {
+    const msg: Message = { role: 'user', content: message() }
+    setMessage('')
+    setChat(chat => [...chat, msg])
+    setThinking(true)
+
+    const reply = await askClaude(chat(), html(), css(), js())
+    setThinking(false)
+
+    for(const message of reply)
+      if(message.type === 'text')
+        setChat(chat => [...chat, {role: 'assistant', content: message.text}])
+      else if(message.type === 'tool_use') {
+        if(message.name === 'set_code') {
+          handleCodeChange(message.input)
+          props.onRefresh()
+        } else if(message.name === 'refresh_preview') props.onRefresh()
+      }
+    
+    setChatSession(chat())
   }
 
   return <>
@@ -62,7 +95,7 @@ const ZiteChef: Component<Props> = (props) => {
               each={chat()}
             >
               {(item) => {
-                return <Chat agent={'assistant'} message={'hey there'} />
+                return <Chat agent={item.role} message={item.content} />
               }}
             </For>
             <Show when={thinking()}>
@@ -89,10 +122,11 @@ const ZiteChef: Component<Props> = (props) => {
               onKeyUp={ev => {
                 if (ev.key === 'Enter' && !ev.shiftKey) {
                   ev.preventDefault()
+                  void onMessage()
                 }
               }}
             />
-            <div class="flex size-[60px] items-center justify-center rounded-full bg-tertiary text-accent">
+            <div onClick={() => void onMessage()} class="flex size-[60px] items-center justify-center rounded-full bg-tertiary text-accent">
               <BiSolidSend size={30} />
             </div>
           </div>

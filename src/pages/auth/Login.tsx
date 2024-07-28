@@ -1,5 +1,6 @@
 import { createSignal, type Component, For } from 'solid-js'
 import { useNavigate } from '@solidjs/router'
+import { login } from '~/api/auth'
 import { OverlayLoader } from '~/components/Loader'
 import Input from './components/Input'
 import Header from './components/Header'
@@ -31,6 +32,31 @@ const Login: Component = () => {
   const [status, setStatus] = createSignal('')
   const [error, setError] = createSignal('')
 
+  const validateForm = () => {
+    const newErrors: Partial<LoginForm> = {}
+    fields.forEach(field => {
+      if (!form()[field.name]) {
+        newErrors[field.name] = `please enter a valid ${field.name}`
+      }
+    })
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const logIn = () => {
+    if (validateForm()) {
+      setStatus('logging you in..')
+      login(form().identifier, form().password)
+        .then(() => window.location.replace('/'))
+        .catch(err => {
+          setStatus('')
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          setError(err.message)
+          setTimeout(() => setError(''), 2000)
+        })
+    }
+  }
+
   return (
     <div class="flex size-full items-center justify-center">
       <OverlayLoader status={status()} error={error()} />
@@ -47,7 +73,7 @@ const Login: Component = () => {
             />
           )}
         </For>
-        <Button label="Let's go" />
+        <Button onClick={logIn} label="Let's go" />
         <p
           class="cursor-pointer text-lg text-accent hover:font-bold"
           onClick={() => navigate('/signup')}

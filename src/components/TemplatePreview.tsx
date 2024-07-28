@@ -3,12 +3,30 @@ import { AiOutlineClose } from 'solid-icons/ai'
 import { Template } from '~/types'
 import Button from '~/components/Button'
 import Modal from '~/components/Modal'
+import { newSite } from '~/api/site'
+import { useNavigate } from '@solidjs/router'
+import { getTemplatePreview } from '~/api/template'
 import { Loader, OverlayLoader } from './Loader'
 
 const PreviewModal: Component<{ visible: boolean, template: Template | undefined, onClose: () => void }> = (props) => {
 
+  const navigate = useNavigate()
   const [status, setStatus] = createSignal('')
   const [error, setError] = createSignal('')
+
+  const buildSite = () => {
+    setStatus('creating site...')
+    newSite(props.template?._id.$oid || '')
+      .then(id => {
+        navigate(`/editor?id=${id}&name=${props.template?.name}`)
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+      .catch(err => setError(err.message))
+      .finally(() => {
+        setStatus('')
+        setError('')
+      })
+  }
 
   return <Modal visible={props.visible} lower >
     <OverlayLoader status={status()} error={error()} />
@@ -28,7 +46,7 @@ const PreviewModal: Component<{ visible: boolean, template: Template | undefined
           <Suspense fallback={<Loader />}>
             <img
               class="h-[20h] rounded-lg lg:h-[50vh]"
-              src={'https://picsum.photos/300/300'}
+              src={getTemplatePreview(props.template?._id.$oid || '', true)}
             />
           </Suspense>
         </div>
@@ -36,14 +54,14 @@ const PreviewModal: Component<{ visible: boolean, template: Template | undefined
           <Suspense fallback={<Loader />}>
             <img
               class="h-[25h] rounded-lg lg:h-[50vh]"
-              src={'https://picsum.photos/300/200'}
+              src={getTemplatePreview(props.template?._id.$oid || '', false)}
             />
           </Suspense>
         </div>
       </div>
       <div class="flex basis-2/12 items-center justify-center">
         <div class="flex size-full items-center justify-center lg:w-3/4">
-          <Button label="Use template" size="h-12" onClick={() => {}} />
+          <Button label="Use template" size="h-12" onClick={() => void buildSite()} />
         </div>
       </div>
     </div>

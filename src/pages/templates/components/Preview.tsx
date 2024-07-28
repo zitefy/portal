@@ -1,10 +1,13 @@
 import { Component, createSignal, JSX, Show, Suspense } from 'solid-js'
 import { IoRefreshOutline } from 'solid-icons/io'
 import { AiOutlineSwap, AiOutlineInfoCircle } from 'solid-icons/ai'
+import { getCodePreviewURL } from '~/api/site'
 import { Loader } from '~/components/Loader'
 
 const Preview: Component<{onRefresh: () => void, mobile?: string, desktop?: string}> = (props) => {
   const [isWide, toggleWide] = createSignal<boolean>(false)
+  const narrow = () => getCodePreviewURL(props.mobile || '')
+  const wide = () => getCodePreviewURL(props.desktop || '')
 
   const Button: Component<{icon?: JSX.Element, onClick: () => void, label: string}> = (button) => {
     return (
@@ -33,7 +36,7 @@ const Preview: Component<{onRefresh: () => void, mobile?: string, desktop?: stri
               <div class="relative aspect-[412/915] w-5/6 max-w-md overflow-hidden rounded-lg lg:w-2/6">
                 <img
                   class="absolute inset-0 size-full object-cover"
-                  src={'https://picsum.photos/300/300'}
+                  src={narrow()}
                   alt="Mobile preview"
                 />
               </div>
@@ -44,7 +47,7 @@ const Preview: Component<{onRefresh: () => void, mobile?: string, desktop?: stri
             <div class="relative aspect-[8/5] w-full max-w-4xl overflow-hidden rounded-lg">
               <img
                 class="absolute inset-0 size-full object-cover"
-                src={'https://picsum.photos/300/300'}
+                src={wide()}
                 alt="Desktop preview"
               />
             </div>
