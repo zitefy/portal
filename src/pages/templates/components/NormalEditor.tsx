@@ -1,11 +1,41 @@
-import { Component, createSignal, For, createEffect, Show } from 'solid-js'
+import { Component, createSignal, For, createResource, createEffect, useContext, Show } from 'solid-js'
 import { AiFillCheckCircle, AiOutlineInfoCircle } from 'solid-icons/ai'
 import { Link } from '~/types'
+import { getDP } from '~/api/auth'
+import { getSiteData } from '~/api/site'
+import { AuthContext, AuthContextType } from '~/contexts/AuthContext'
+import { getSelected, setSelections } from '~/api/cache'
 
 const NormalEditor: Component<{ id?: string, onChange: (data: Link[]) => void }> = (props) => {
 
+  const id = () => props.id
+  const { user } = useContext(AuthContext) as AuthContextType
+  const [siteData] = createResource<Link[]>(getSiteData.bind(null, id()))
   const [selected, setSelected] = createSignal<string[]>([])
   const [links, setLinks] = createSignal<Link[]>([])
+
+  createEffect(() => {
+    if (user() && siteData()) {
+      const initialLinks: Link[] = [
+        { selector: 'image', value: getDP(user()?.username) },
+        { selector: 'username', value: user()?.username },
+        { selector: 'name', value: user()?.name },
+        { selector: 'email', value: user()?.email, link: 'mailto:' },
+        { selector: 'phone', value: user()?.phone, link: 'tel:' },
+        { selector: 'bio', value: user()?.bio },
+        { selector: 'pronouns', value: user()?.pronouns },
+        ...(user()?.links || []),
+      ]
+      
+      setLinks(initialLinks.filter(link => {
+        return link.value !== undefined && link.value !== null && link.value !== ''
+      }))
+
+      // Set initially selected items based on siteData
+      const initialSelected = getSelected().length === 0 ? siteData().map(link => link.selector) : getSelected()
+      setSelected(initialSelected)
+    }
+  })
 
   createEffect(() => {
     const selectedLinks = links().filter(link => selected().includes(link.selector))
@@ -16,6 +46,7 @@ const NormalEditor: Component<{ id?: string, onChange: (data: Link[]) => void }>
     setSelected(prev => 
       prev.includes(selector) ? prev.filter(s => s !== selector) : [...prev, selector],
     )
+    setSelections(selected())
   }
 
   const secondaryLinks = () => links().filter(link => !['username', 'name', 'email', 'bio', 'pronouns', 'image'].includes(link.selector))
@@ -46,7 +77,7 @@ const NormalEditor: Component<{ id?: string, onChange: (data: Link[]) => void }>
       class={`flex size-full items-center justify-center rounded-xl hover:border-2 hover:border-accent hover:bg-accent-secondary ${isSelected() && 'border-2 border-accent bg-accent-secondary'}`}
     >
       <img
-        src={'https://picsum.photos/300/300'}
+        src={getDP(user()?.username)}
         class="size-[40vw] rounded-full md:size-[25vw] lg:size-[15vw]"
       />
     </div>

@@ -1,8 +1,11 @@
-import { Component, createSignal, For } from 'solid-js'
+import { Component, createSignal, useContext, For, createEffect } from 'solid-js'
 import { useNavigate, useSearchParams } from '@solidjs/router'
 import { createStore } from 'solid-js/store'
 import { AiOutlineLink } from 'solid-icons/ai'
 import { FiLinkedin, FiPhone, FiTwitter, FiGithub, FiInstagram } from 'solid-icons/fi'
+import { SOCIALS, PRONOUNS } from '~/api/base'
+import { AuthContext, AuthContextType } from '~/contexts/AuthContext'
+import { editUser } from '~/api/auth'
 import { OverlayLoader } from '~/components/Loader'
 import { type Link, type User } from '~/types'
 import Header from '~/components/Header'
@@ -15,6 +18,7 @@ import Input from './components/Input'
 type EditableUserFields = Pick<User, 'name' | 'dob' | 'pronouns' | 'bio' | 'phone'>
 
 const Profile: Component = () => {
+  const { refreshUser, user, logout } = useContext(AuthContext) as AuthContextType
 
   const [formData, setFormData] = createStore<EditableUserFields>({
     name: '',
@@ -24,7 +28,7 @@ const Profile: Component = () => {
     phone: '',
   })
 
-  const [socialLinks, setSocialLinks] = createSignal<Link[]>([])
+  const [socialLinks, setSocialLinks] = createSignal<Link[]>(SOCIALS)
 
   const [status, setStatus] = createSignal<string>('')
   const [error, setError] = createSignal<string>('')
@@ -38,6 +42,40 @@ const Profile: Component = () => {
     pronouns: (value: string) => setFormData('pronouns', value),
     bio: (value: string) => setFormData('bio', value),
     phone: (value: string) => setFormData('phone', value),
+  }
+
+  createEffect(() => {
+    const userData = user()
+    if (userData) {
+      for (const key of Object.keys(setters) as Array<keyof EditableUserFields>) {
+        setters[key](userData[key] || '')
+      }
+    }
+  })
+
+  createEffect(() => {
+    const links = user()?.links || []
+    if (links) 
+      setSocialLinks(SOCIALS.map(social => links.find(link => link.selector === social.selector) || social))
+  })
+
+  const handleSave = () => {
+    setStatus('saving your data...')
+    editUser({
+      ...formData,
+      links: socialLinks().filter(link => link.value != undefined),
+    })
+      .then(async() => {
+        setStatus('saved! just a moment..')
+        await refreshUser()
+        if(params.redirect) navigate('/')
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+      .catch(err => setError(err.message))
+      .finally(() => {
+        setStatus('')
+        setTimeout(() => setError(''), 2000)
+      })
   }
 
   const getSocialIcon = (selector: string) => {
@@ -55,7 +93,7 @@ const Profile: Component = () => {
       <OverlayLoader status={status()} error={error()} />
       <Header
         right={
-          <div class="group flex size-full cursor-pointer items-center justify-end px-10">
+          <div onClick={logout} class="group flex size-full cursor-pointer items-center justify-end px-10">
             <p class="text-error group-hover:font-semibold">logout</p>
           </div>
         }
@@ -73,8 +111,8 @@ const Profile: Component = () => {
                   onInput={(e) => setters.name(e.currentTarget.value)}
                   placeholder="display name"
                 />
-                <h2 class="text-xl text-neutral-400">@username</h2>
-                <h2 class="text-neutral-400">email@email.com</h2>
+                <h2 class="text-xl text-neutral-400">@{user()?.username}</h2>
+                <h2 class="text-neutral-400">{user()?.email}</h2>
               </div>
               <div class="flex w-full items-center space-x-2 lg:w-1/2">
                 <p class="text-neutral-500">DOB</p>
@@ -82,14 +120,14 @@ const Profile: Component = () => {
               </div>
               <div class="flex w-full lg:w-1/2">
                 <Selector
-                  data={[]}
+                  data={PRONOUNS}
                   label="pronouns"
                   selected={{value: formData.pronouns || ''}}
                   onSelect={value => setters.pronouns(value.value)}
                 />
               </div>
               <div class="mb-4 flex w-full justify-center lg:justify-start">
-                <Button label="Save" size={'h-12'} />
+                <Button label="Save" onClick={handleSave} size={'h-12'} />
               </div>
             </div>
             <div class="flex basis-1/2 flex-col items-center justify-center space-y-4 px-4 lg:px-0">

@@ -1,11 +1,34 @@
-import { createSignal, Show, Suspense } from 'solid-js'
+import { createSignal, useContext, Show, Suspense } from 'solid-js'
 import { Component } from 'solid-js'
 import { FiEdit } from 'solid-icons/fi'
+import { AuthContext, AuthContextType } from '~/contexts/AuthContext'
+import { BASE_URL} from '~/api/config'
+import { uploadDP } from '~/api/auth'
 import { Loader } from './Loader'
 
 const ImageUpload: Component = () => {
+  const { user } = useContext(AuthContext) as AuthContextType
   const [isLoading, setIsLoading] = createSignal<boolean>(false)
   let fileInputRef: HTMLInputElement | null = null
+
+  const handleImageUpload = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    if (target.files && target.files[0]) {
+      const file = target.files[0]
+      setIsLoading(true)
+      void uploadImage(file)
+    }
+  }
+
+  const uploadImage = async (file: File) => {
+    try {
+      await uploadDP(file)
+    } catch (error) {
+      console.error('Error uploading image:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleEditClick = () => {
     fileInputRef?.click()
@@ -23,7 +46,7 @@ const ImageUpload: Component = () => {
       <div class="relative size-full">
         <Suspense>
           <img 
-            src={'https://picsum.photos/300/300'} 
+            src={`${BASE_URL}/user/dp?username=${user()?.username}&t=${new Date().getTime()}`} 
             alt="dp" 
             class="size-full rounded-full bg-[url('https://picsum.photos/id/250/250?grayscale')]" 
           />
@@ -42,6 +65,7 @@ const ImageUpload: Component = () => {
           accept="image/*"
           class="hidden"
           ref={(el) => (fileInputRef = el)}
+          onChange={handleImageUpload}
         />
       </div>
     </Show>

@@ -2,12 +2,28 @@ import { Component, createSignal, For } from 'solid-js'
 import { BiRegularCopy } from 'solid-icons/bi'
 import { FiDownload } from 'solid-icons/fi'
 import { AiFillDelete, AiOutlineInfoCircle } from 'solid-icons/ai'
+import { getAssetURL, uploadAsset } from '~/api/site'
 import Button from '~/components/Button'
 import { OverlayLoader } from '~/components/Loader'
 
 const Assets: Component<{ initial: string[], site_id: string }> = (props) => {
   const [assets, setAssets] = createSignal(props.initial)
   const [status, setStatus] = createSignal('')
+
+  const handleAddAsset = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        setStatus('uploading asset...')
+        const newAssets = await uploadAsset(file, props.site_id)
+        setAssets(newAssets.assets)
+        setStatus('')
+      }
+    }
+    input.click()
+  }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -27,12 +43,13 @@ const Assets: Component<{ initial: string[], site_id: string }> = (props) => {
   }
 
   const Asset: Component<{ name: string }> = (assetProps) => {
+    const url = getAssetURL(props.site_id, assetProps.name)
 
     return (
       <div class="flex h-[60px] w-full rounded-lg bg-secondary">
         <OverlayLoader status={status()} />
         <div class="flex basis-1/12 items-center justify-center">
-          <BiRegularCopy onClick={() => copyToClipboard('url')} class="cursor-pointer" />
+          <BiRegularCopy onClick={() => copyToClipboard(url)} class="cursor-pointer" />
         </div>
         <div class="flex basis-10/12 flex-col justify-center overflow-hidden">
           <p class="truncate lg:text-lg">{assetProps.name}</p>
@@ -59,7 +76,7 @@ const Assets: Component<{ initial: string[], site_id: string }> = (props) => {
       <For each={assets()}>
         {(asset) => <Asset name={asset} />}
       </For>
-      <Button label="Add asset" size="h-12" />
+      <Button onClick={handleAddAsset} label="Add asset" size="h-12" />
     </div>
   )
 }

@@ -1,9 +1,11 @@
-import { Component, createSignal, onMount, onCleanup, Show, lazy } from 'solid-js'
+import { Component, createSignal, createEffect, createResource, onMount, onCleanup, Show, useContext, lazy } from 'solid-js'
 import { useSearchParams } from '@solidjs/router'
 import { VsCode } from 'solid-icons/vs'
-import { Link } from '~/types'
+import { AuthContext, AuthContextType } from '~/contexts/AuthContext'
+import { activateSite, getCodePreview, getSource, renameSite, saveCode, setSiteData } from '~/api/site'
+import { clearChatSession, clearSelections, getEditorPreference, setEditorPreference } from '~/api/cache'
+import { Source, Link } from '~/types'
 import { OverlayLoader } from '~/components/Loader'
-import { setEditorPreference, getEditorPreference } from '~/api/cache'
 import Button from '~/components/Button'
 import Header from '~/components/Header'
 import Switch from '~/components/Switch'
@@ -13,6 +15,8 @@ const NormalEditor = lazy(() => import('./components/NormalEditor'))
 const ZiteChef = lazy(() => import('./components/ZiteChef'))
 
 const Editor: Component = () => {
+
+  const { user } = useContext(AuthContext) as AuthContextType
 
   const [isWide, setView] = createSignal(window.innerWidth > 1024)
   const [isLeftPane, showLeftPane] = createSignal(true)
@@ -29,6 +33,7 @@ const Editor: Component = () => {
   const [desktopPreview, setDesktopPreview] = createSignal('')
 
   const [params] = useSearchParams()
+  const [source] = createResource<Source>(params.id, getSource)
   const [name, setName] = createSignal(params.name)
   
   onMount(() => {
@@ -38,6 +43,80 @@ const Editor: Component = () => {
   })
   onCleanup(() => {
     window.removeEventListener('resize', () => {})
+    clearSelections()
+    clearChatSession()
+  })
+
+  createEffect(() => {
+    if (source()) {
+      setHtmlCode(source().html)
+      setCssCode(source().css)
+      setJsCode(source().js)
+      setAssets(source().assets)
+    }
+  })
+
+  const refreshPreview = () => {
+    setStatus('refreshing preview...')
+    getCodePreview(htmlCode(), cssCode(), jsCode(), data() || [])
+      .then(previews => {
+        setMobilePreview(previews.mobile)
+        setDesktopPreview(previews.desktop)
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+      .catch(err => setError(err.message))
+      .finally(() => {
+        setStatus('')
+        setError('')
+      })
+  }
+
+  const save = async () => {
+    setStatus('Saving changes...')
+    setError('')
+
+    const html = new File([htmlCode()], 'index.html', { type: 'text/html' })
+    const css = new File([cssCode()], 'styles.css', { type: 'text/css' })
+    const js = new File([jsCode()], 'script.js', { type: 'application/javascript' })
+
+    try {
+      await Promise.all([
+        (async () => {
+          setStatus('Saving code changes...')
+          await saveCode(html, css, js, params.id || '')
+          setStatus('Code changes saved successfully!')
+        })(),
+        (async () => {
+          setStatus('Saving preferences...')
+          await setSiteData(params.id || '', data() || [])
+          setStatus('Preferences saved successfully!')
+        })(),
+      ])
+
+      setStatus('All changes saved successfully!')
+    } catch (error) {
+      console.error('Error during save:', error)
+      setError('There was an error saving your changes. Please try again.')
+    } finally {
+      setTimeout(() => {
+        setStatus('')
+        setError('')
+      }, 1000)
+    }
+
+    // server only updates the currently active site if it's reactivated
+    if(user()?.active?.$oid === params.id) void activateSite(params.id || '')
+  }
+
+  const rename = () => {
+    renameSite(params.id, name())
+      .then(newName => setName(newName))
+      .catch(err => console.error(err))
+  }
+
+  onMount(() => {
+    setStatus('just a moment')
+    setTimeout(() => void refreshPreview(), 2000)
   })
 
   const Editor: Component = () => {
@@ -88,6 +167,7 @@ const Editor: Component = () => {
       html={htmlCode()} setHtml={setHtmlCode}
       css={cssCode()} setCSS={setCssCode}
       js={jsCode()} setJS={setJsCode}
+      onRefresh={refreshPreview}
     />
     <Header
       center={isWide() ? <div class="flex size-full flex-col items-center justify-center">
@@ -96,12 +176,13 @@ const Editor: Component = () => {
           value={name()}
           placeholder="Name this site for quick access"
           onChange={ev => setName(ev.target.value)}
+          onBlur={rename}
           class="w-full border-0 bg-transparent text-center focus:outline-none"
         />
         <p class="text-xs text-on-secondary">all unsaved changes will be lost if you leave this page</p>
       </div> : undefined}
       right={<div class="flex size-full items-end justify-end px-6 lg:items-center">
-        <Button onClick={() => {}} size="h-12" label="Save" />
+        <Button onClick={() => void save()} size="h-12" label="Save" />
       </div>}
     >
       <div class="flex size-full flex-col" >
@@ -110,7 +191,7 @@ const Editor: Component = () => {
             <Editor />
           </Show>
           <Show when={isWide() || !isLeftPane()}>
-            <Preview mobile={mobilePreview()} desktop={desktopPreview()} />
+            <Preview onRefresh={refreshPreview} mobile={mobilePreview()} desktop={desktopPreview()} />
           </Show>
         </div>
         <div class="basis-1/12">

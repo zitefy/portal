@@ -1,9 +1,12 @@
-import { Component, JSX, Show } from 'solid-js'
+import { Component, JSX, Show, useContext } from 'solid-js'
 import { AiOutlineGithub } from 'solid-icons/ai'
+import { AuthContext, AuthContextType } from '~/contexts/AuthContext'
 import { A, useNavigate } from '@solidjs/router'
 import Logo from './Logo'
+import { getDP } from '~/api/auth'
 
 const Image: Component = () => {
+  const { user } = useContext(AuthContext) as AuthContextType
   const navigate = useNavigate()
   return <div class="flex basis-1/2 items-end justify-end space-x-3 px-10 lg:basis-1/5 lg:items-center lg:px-8" >
     <A href="https://github.com/zitefy" target="_blank">
@@ -14,7 +17,7 @@ const Image: Component = () => {
     <img
       onClick={() => navigate('/profile')}
       class="size-[50px] cursor-pointer rounded-full bg-[url('https://picsum.photos/id/250/50?grayscale')]"
-      src={'https://picsum.photos/300/300'}
+      src={getDP(user()?.username)}
     />
   </div>
 }

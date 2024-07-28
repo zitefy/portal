@@ -1,4 +1,5 @@
-import { Component, createSignal, For, Show } from 'solid-js'
+import { Component, createResource, createSignal, For, Show } from 'solid-js'
+import { getAllTemplates, getTemplatePreview } from '~/api/template'
 import { Template } from '~/types'
 import { Loader } from '~/components/Loader'
 import Header from '~/components/Header'
@@ -30,7 +31,7 @@ export const TemplateCard: Component<{ template: Template, onClick: (id: Templat
       <div class="size-5/6 rounded-lg border-0" >
         <img
           class="h-[200px] rounded-lg"
-          src={}
+          src={getTemplatePreview(props.template._id.$oid, true)}
         />
       </div>
     </div>
@@ -42,7 +43,7 @@ export const TemplateCard: Component<{ template: Template, onClick: (id: Templat
 }
 
 const Explorer: Component = () => {
-  const [templates] = createSignal([])
+  const [templates] = createResource(getAllTemplates)
   const [popUp, setPopUp] = createSignal<Template>()
 
   return <div class="size-full">
@@ -55,7 +56,7 @@ const Explorer: Component = () => {
       center={<Search onSearch={value => console.log(`Searched for ${value}`)} />}
     >
       <Show
-        when={true}
+        when={!templates.loading}
         fallback={<div class="flex size-full items-center justify-center"><Loader /></div>}
       >
         <>
