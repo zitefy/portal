@@ -137,4 +137,4 @@ Follow this setup guide to install and run the project locally. There are no str
     ```
 
 ## Contributing
-Thanks for your interest in contributing to this project. Please refer to the contributing guide.
+Thanks for your interest in contributing to this project. Please refer to the [contributing guide](https://github.com/zitefy/portal/blob/main/CONTRIBUTING.md).
