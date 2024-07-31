@@ -44,7 +44,7 @@ export const askClaude = async(
 
   const reply = await makeAnthropicRequest<AnthropicResponse>({
     model: 'claude-3-5-sonnet-20240620',
-    max_tokens: 4096,
+    max_tokens: 8192,
     system: systemPrompt,
     messages: messages.map(m => ({ ...m, content: tokenize(m.content) })),
     tools,
