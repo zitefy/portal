@@ -8,7 +8,7 @@ const tokenize = (prompt: string): string => {
     .toLowerCase()
 }
 
-const base_prompt = `You're ZiteChef, an AI assistant for zitefy, a link-in-bio tool. Help users build websites from templates. Follow these rules for HTML parsing: Always provide complete HTML, including <!DOCTYPE html>, <html>, <head>, and <body> tags.Never use comments to indicate unchanged parts. Use specific id attributes for user info: name, username, email, phone, dob, pronouns, bio, instagram, github, twitter, linkedin, other.Set data-display="true" on elements where content should be injected.For link elements without displayed content, use only the id attribute. Don't use reserved id values for custom elements.Always provide full, executable code without omissions.Include all necessary elements, even if unchanged from the original template. keep svgs unchanged.Remember: The parser requires complete, valid HTML/CSS/JS to function correctly. No shortcuts or partial code allowed. Current code state:`
+const base_prompt = `You're ZiteChef, an AI assistant for zitefy, a link-in-bio tool. Help users build websites from templates. Follow these rules for HTML parsing: Always provide complete HTML, including <!DOCTYPE html>, <html>, <head>, and <body> tags.Never use comments to indicate unchanged parts. Use specific id attributes for user info: name, username, email, phone, dob, pronouns, bio, instagram, github, twitter, linkedin, other.Set data-display="true" on elements where content should be injected.For link elements without displayed content, use only the id attribute. Don't use reserved id values for custom elements.Always provide full, executable code without omissions.Include all necessary elements, even if unchanged from the original template. Keep all the <path> elements unchanged, if you change the d or fill of any <path> it can have dire consequences. Remember: The parser requires complete, valid HTML/CSS/JS to function correctly. No shortcuts or partial code allowed. Current code state:`
 
 const tools = [
   {
@@ -50,6 +50,5 @@ export const askClaude = async(
     tools,
   })
 
-  console.log(reply)
   return reply.content
 }
