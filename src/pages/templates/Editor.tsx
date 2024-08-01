@@ -22,7 +22,7 @@ const Editor: Component = () => {
   const [isLeftPane, showLeftPane] = createSignal(true)
   const [status, setStatus] = createSignal('')
   const [error, setError] = createSignal('')
-  const [data, setData] = createSignal<Link[]>()
+  const [data, setData] = createSignal<Link[]>([])
   
   const [htmlCode, setHtmlCode] = createSignal('')
   const [cssCode, setCssCode] = createSignal('')
@@ -56,9 +56,41 @@ const Editor: Component = () => {
     }
   })
 
-  const refreshPreview = () => {
+  const refreshPreview = async() => {
+    // temporary fix for showing dp in preview because of https://github.com/zitefy/server/pull/9
+    // this will be removed in the future.
+    setStatus('encoding data...')
+    const updatedData: Link[] = await Promise.all(data().map(async (item: Link) => {
+      if (item.selector === 'image' && item.value) {
+        // if it's the dp, then encode it to base64 for the preview
+        try {
+          const response = await fetch(item.value)
+          const blob = await response.blob()
+          return new Promise<Link>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+              if (typeof reader.result === 'string') {
+                resolve({
+                  ...item,
+                  value: reader.result,
+                })
+              } else {
+                console.error(`Failed to encode image: ${item.value}`)
+                resolve(item)
+              }
+            }
+            reader.onerror = reject
+            reader.readAsDataURL(blob)
+          })
+        } catch (err) {
+          console.error(`Failed to encode image: ${item.value}`, err)
+          return item
+        }
+      }
+      return item
+    }))
     setStatus('refreshing preview...')
-    getCodePreview(htmlCode(), cssCode(), jsCode(), data() || [])
+    getCodePreview(htmlCode(), cssCode(), jsCode(), updatedData)
       .then(previews => {
         setMobilePreview(previews.mobile)
         setDesktopPreview(previews.desktop)
@@ -167,7 +199,7 @@ const Editor: Component = () => {
       html={htmlCode()} setHtml={setHtmlCode}
       css={cssCode()} setCSS={setCssCode}
       js={jsCode()} setJS={setJsCode}
-      onRefresh={refreshPreview}
+      onRefresh={() => void refreshPreview()}
     />
     <Header
       center={isWide() ? <div class="flex size-full flex-col items-center justify-center">
@@ -191,7 +223,7 @@ const Editor: Component = () => {
             <Editor />
           </Show>
           <Show when={isWide() || !isLeftPane()}>
-            <Preview onRefresh={refreshPreview} mobile={mobilePreview()} desktop={desktopPreview()} />
+            <Preview onRefresh={() => void refreshPreview()} mobile={mobilePreview()} desktop={desktopPreview()} />
           </Show>
         </div>
         <div class="basis-1/12">
