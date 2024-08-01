@@ -59,7 +59,7 @@ const Header: Component = () => {
       <Logo />
       <h1 class="mb-4 text-6xl">zitefy</h1>
       <div class="h-8">
-        <h4 class="text-xl">
+        <h4 class="text-center text-xl">
           {currentPhrase()}
           <span class="animate-blink">|</span>
         </h4>
