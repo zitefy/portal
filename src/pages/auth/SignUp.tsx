@@ -6,6 +6,7 @@ import Input from './components/Input'
 import Header from './components/Header'
 import Button from '~/components/Button'
 import Footer from './components/Footer'
+import Demo from './components/Demo'
 
 type SignUpField = {
   name: 'username' | 'email' | 'password';
@@ -61,6 +62,7 @@ const SignUp: Component = () => {
 
   return (
     <div class="flex size-full items-center justify-center">
+      <Demo />
       <OverlayLoader status={status()} error={error()} />
       <div class="flex size-full flex-col items-center justify-center space-y-4 px-4 md:w-1/3 md:px-0 lg:space-y-2">
         <Header />
