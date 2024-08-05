@@ -40,7 +40,7 @@ const tools = [
 export const askClaude = async(
   messages: Message[], html?: string, css?: string, js?: string,
 ): Promise<(Text | ToolUse)[]> => {
-  const systemPrompt = `${base_prompt} HTML: ${tokenize(html || '')}, CSS: ${tokenize(css || '')}, JS: ${tokenize(js || '')}`
+  const systemPrompt = `${base_prompt} HTML: ${html}, CSS: ${tokenize(css || '')}, JS: ${tokenize(js || '')}`
 
   const reply = await makeAnthropicRequest<AnthropicResponse>({
     model: 'claude-3-5-sonnet-20240620',
