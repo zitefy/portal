@@ -6,7 +6,7 @@ const Demo: Component = () => {
   const navigate = useNavigate()
 
   return <div class="flex size-full items-center justify-center">
-    <button onClick={() => navigate('/')} class="fixed left-10 top-10 rounded-full bg-accent px-5 py-2">{'< Back'}</button>
+    <button onClick={() => navigate('/')} class="fixed left-10 top-10 rounded-full bg-accent px-5 py-2 text-primary">{'< Back'}</button>
     <div class="flex size-5/6 items-center justify-center">
       <Suspense fallback={<Loader />}>
         <div style={{'position':'relative','padding-bottom':'calc(53.63247863247863% + 41px)','height':'0','width':'100%'}}>
